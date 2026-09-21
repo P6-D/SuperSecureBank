@@ -1,0 +1,53 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: securebank-backend
+  datasource:
+    url: jdbc:h2:mem:securebank;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_absent
+
+securebank:
+  jwt:
+    # RS256 keypair is generated at startup for the testbed (see JwtKeyProvider).
+    access-token-ttl-seconds: 900        # 15 min, FR-BE-003
+    refresh-token-ttl-seconds: 604800    # 7 days, FR-BE-003
+    mfa-token-ttl-seconds: 300           # short-lived token between login and mfa/verify
+  otp:
+    ttl-seconds: 600                     # 10 min, FR-BE-001
+    length: 6
+  security:
+    bcrypt-strength: 12
+    max-failed-login-attempts: 5
+    request-signing-secret: "securebank-testbed-hmac-shared-secret-change-me"
+    step-up-transfer-threshold: 1000.00
+    statement-max-range-months: 12
+    cancel-window-minutes: 10
+    qr-token-ttl-seconds: 60
+  api:
+    version: "1.0.0"
+    base-path: /api/v1
+
+logging:
+  level:
+    root: INFO
+    com.securebank.backend: DEBUG
