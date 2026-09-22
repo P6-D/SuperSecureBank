@@ -4,6 +4,11 @@ import com.securebank.backend.api.auth.UserResponseData
 import com.securebank.backend.domain.entity.AuditLog
 import com.securebank.backend.domain.entity.FraudCase
 import jakarta.validation.constraints.NotBlank
+data class AddBalanceRequest(
+    @field:NotBlank val amount: String,
+    val description: String? = null
+)
+
 import java.time.format.DateTimeFormatter
 
 data class UpdateUserStatusRequest(

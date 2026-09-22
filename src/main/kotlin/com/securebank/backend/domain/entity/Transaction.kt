@@ -5,7 +5,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
 
-enum class TransactionType { TRANSFER_INTERNAL, TRANSFER_EXTERNAL, QR_PAYMENT, FEE, REVERSAL }
+enum class TransactionType { TRANSFER_INTERNAL, TRANSFER_EXTERNAL, QR_PAYMENT, FEE, REVERSAL, DEPOSIT }
 enum class TransactionStatus { PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED, REVERSED }
 enum class InitiatedBy { USER, SYSTEM, ADMIN }
 

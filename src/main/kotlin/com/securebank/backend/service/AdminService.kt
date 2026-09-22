@@ -8,6 +8,14 @@ import com.securebank.backend.domain.entity.UserStatus
 import com.securebank.backend.repository.AuditLogRepository
 import com.securebank.backend.repository.FraudCaseRepository
 import com.securebank.backend.repository.UserRepository
+import com.securebank.backend.api.account.AccountResponseData
+import com.securebank.backend.api.transaction.TransactionResponseData
+import com.securebank.backend.domain.entity.Transaction
+import com.securebank.backend.domain.entity.TransactionStatus
+import com.securebank.backend.domain.entity.TransactionType
+import com.securebank.backend.repository.AccountRepository
+import com.securebank.backend.repository.TransactionRepository
+import java.math.BigDecimal
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -21,6 +29,8 @@ class AdminService(
     private val userRepository: UserRepository,
     private val auditLogRepository: AuditLogRepository,
     private val fraudCaseRepository: FraudCaseRepository,
+    private val accountRepository: AccountRepository,
+    private val transactionRepository: TransactionRepository,
     private val auditService: AuditService
 ) {
     fun listUsers(page: Int, pageSize: Int): PaginatedData<UserResponseData> {
@@ -99,6 +109,45 @@ class AdminService(
         } catch (e: IllegalArgumentException) {
             badRequest("Invalid status: ${request.status}")
         }
+    fun getUserAccounts(userId: UUID): List<AccountResponseData> {
+        val user = userRepository.findById(userId).orElseThrow { notFound("User not found") }
+        return accountRepository.findByUserId(user.id).map { AccountResponseData.from(it) }
+    }
+
+    @Transactional
+    fun addBalance(adminId: UUID, userId: UUID, accountId: UUID, request: AddBalanceRequest): TransactionResponseData {
+        val account = accountRepository.findById(accountId).orElseThrow { notFound("Account not found") }
+        if (account.userId != userId) badRequest("Account does not belong to user")
+        
+        val amount = AmountFormat.parse(request.amount)
+        if (amount <= BigDecimal.ZERO) badRequest("Amount must be positive")
+
+        account.balance += amount
+        account.availableBalance += amount
+        accountRepository.save(account)
+
+        val tx = Transaction(
+            userId = userId,
+            sourceAccountId = accountId,
+            destinationAccountId = null,
+            amount = amount,
+            currency = account.currency,
+            type = TransactionType.DEPOSIT,
+            status = TransactionStatus.COMPLETED,
+            reference = "DEP-" + UUID.randomUUID().toString().take(8).uppercase(),
+            description = request.description ?: "Admin deposit",
+            idempotencyKey = UUID.randomUUID().toString(),
+            initiatedBy = com.securebank.backend.domain.entity.InitiatedBy.ADMIN
+        )
+        transactionRepository.save(tx)
+
+        auditService.record(
+            eventType = "ADMIN_ADD_BALANCE", adminId = adminId, userId = userId,
+            eventData = mapOf("account_id" to accountId.toString(), "amount" to request.amount)
+        )
+        
+        return TransactionResponseData.from(tx)
+    }
         fraudCase.status = status
         fraudCase.assignedToAdminId = adminId
         request.resolutionNote?.let { fraudCase.resolutionNote = it }

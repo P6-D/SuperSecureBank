@@ -45,6 +45,22 @@ class AdminController(private val adminService: AdminService) {
         return ApiResponse.success(Unit, 200, "User soft-deleted")
     }
 
+    @GetMapping("/users/{userId}/accounts")
+    fun getUserAccounts(@PathVariable userId: UUID): ApiResponse<List<com.securebank.backend.api.account.AccountResponseData>> {
+        return ApiResponse.success(adminService.getUserAccounts(userId))
+    }
+
+    @PostMapping("/users/{userId}/accounts/{accountId}/add-balance")
+    fun addBalance(
+        @AuthenticationPrincipal principal: UserPrincipal,
+        @PathVariable userId: UUID,
+        @PathVariable accountId: UUID,
+        @Valid @RequestBody request: AddBalanceRequest
+    ): ApiResponse<com.securebank.backend.api.transaction.TransactionResponseData> {
+        return ApiResponse.success(adminService.addBalance(principal.id, userId, accountId, request), 200, "Balance added successfully")
+    }
+
+
     @GetMapping("/audit-logs")
     fun getAuditLogs(
         @RequestParam(required = false) userId: UUID?,
