@@ -70,9 +70,14 @@ class SecurityConfig(
     }
 
     @Bean
+    fun corsFilter(): org.springframework.web.filter.CorsFilter {
+        return org.springframework.web.filter.CorsFilter(corsConfigurationSource())
+    }
+
+    @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val config = CorsConfiguration().apply {
-            allowedOrigins = listOf("https://dashboard-super-bank.vercel.app", "https://dashboard-super-bank.vercel.app/")
+            allowedOrigins = listOf("https://dashboard-super-bank.vercel.app")
             allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             allowedHeaders = listOf("*")
             allowCredentials = true
